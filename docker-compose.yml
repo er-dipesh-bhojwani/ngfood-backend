@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:15-alpine
-    container_name: postgres_db
     environment:
       POSTGRES_USER: dipeshbhojwani
       POSTGRES_PASSWORD: dipu@1681256441
@@ -11,26 +10,46 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db-init:/docker-entrypoint-initdb.d
+    networks:
+      - ngfoods_net
 
   backend:
-    image: ngfoods-backend:latest
+    image: ngfoods-backend
     container_name: ngfoods_backend
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/ngfood
       SPRING_DATASOURCE_USERNAME: dipeshbhojwani
       SPRING_DATASOURCE_PASSWORD: dipu@1681256441
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+      SERVER_PORT: 8080
     depends_on:
       - db
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - ngfoods_net
     ports:
       - "8080:8080"
 
   frontend:
-    image: ngfoods-frontend:latest
-    container_name: ngfoods_frontend
+    build: ./frontend
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
-      - "5173:5173"
+      - "3000:3000"
+    networks:
+      - ngfoods_net
+    environment:
+      - VITE_API_BASE_URL=/api   # relative path for React
 
 volumes:
   postgres_data:
+
+networks:
+  ngfoods_net:
+    driver: bridge
