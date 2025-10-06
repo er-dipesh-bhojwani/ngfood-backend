@@ -26,10 +26,10 @@ services:
     depends_on:
       - db
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
-      interval: 5s
-      retries: 10
-      start_period: 10s
+      test: [ "CMD", "nc", "-z", "localhost", "8080" ]
+      interval: 15s
+      retries: 5
+      start_period: 40s
     networks:
       - ngfoods_net
     ports:
